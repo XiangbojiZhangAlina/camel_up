@@ -195,18 +195,25 @@ else:
 
 # UI: Prediction
 st.subheader("🔮 Round-end Winning Probability")
-if st.button("Predict Probability"):
-    probs = predict_probs()
-    for c in camel_colors:
-        st.write(f"{c}: {probs[c]*100:.1f}%")
+# Only show predict button from round 2 onward
+if st.session_state.current_round > 1:
+    if st.button("Predict Probability"):
+        probs = predict_probs()
+        for c in camel_colors:
+            st.write(f"{c}: {probs[c]*100:.1f}%")
 
 # UI: Track display
 st.subheader("🐪 Current Camel Positions & Traps")
+# Support Chinese-to-English translation for any leftover Chinese color keys
+translation_map = {"紫":"Purple","蓝":"Blue","红":"Red","绿":"Green","黄":"Yellow","黑":"Black","白":"White"}
+# Build positions grid
 grid = {i: [] for i in range(1, track_len+1)}
-for c in ss.camel_stack:
-    p = ss.positions.get(c, 0)
-    if 1 <= p <= track_len:
-        grid[p].append(camel_emojis[c])
+for orig_color in st.session_state.camel_stack:
+    color = translation_map.get(orig_color, orig_color)
+    pos = st.session_state.positions.get(orig_color, 0)
+    if 1 <= pos <= track_len:
+        grid[pos].append(camel_emojis.get(color, ""))
+# Render grid rows including traps
 rows = []
 height = max((len(v) for v in grid.values()), default=1)
 for lvl in range(height-1, -1, -1):
@@ -214,8 +221,8 @@ for lvl in range(height-1, -1, -1):
     for i in range(1, track_len+1):
         if lvl < len(grid[i]):
             cell = grid[i][lvl]
-        elif lvl == 0 and i in ss.traps:
-            cell = "+1" if ss.traps[i] == 1 else "-1"
+        elif lvl == 0 and i in st.session_state.traps:
+            cell = "+1" if st.session_state.traps[i] == 1 else "-1"
         else:
             cell = ""
         row.append(cell)
